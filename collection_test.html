@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CASPer Collection — Backend Test</title>
+<style>
+  :root {
+    --ink: #1c2431; --muted: #5b6474; --line: #d4d9e2; --paper: #f7f8fa;
+    --card: #ffffff; --accent: #1f5fbf; --accent-dark: #174a97;
+    --ok: #1d7a4f; --bad: #b3372f; --warn: #9a6b00;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Georgia, serif; background: var(--paper); color: var(--ink); line-height: 1.55; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { border-bottom: 3px double var(--ink); padding-bottom: 12px; margin-bottom: 20px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+  .banner {
+    background: #fff7e6; border: 1px solid var(--warn); color: var(--warn);
+    border-radius: 4px; padding: 10px 14px; margin-bottom: 20px;
+    font-family: Verdana, sans-serif; font-size: 0.8rem;
+  }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+  h2 { font-size: 1.05rem; margin: 0 0 12px; }
+  label { display: block; font-family: Verdana, sans-serif; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], select, textarea {
+    width: 100%; font-family: Georgia, serif; font-size: 1rem; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px;
+  }
+  textarea { min-height: 140px; resize: vertical; }
+  button {
+    margin-top: 16px; width: 100%; padding: 12px;
+    font-family: Verdana, sans-serif; font-size: 0.9rem; font-weight: bold;
+    color: #fff; background: var(--accent); border: none; border-radius: 4px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--accent-dark); }
+  button:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #log {
+    font-family: "Courier New", monospace; font-size: 0.82rem;
+    background: #10141b; color: #d7e0ee; border-radius: 4px;
+    padding: 12px 14px; margin-top: 14px; min-height: 60px; white-space: pre-wrap;
+  }
+  .ok  { color: #6fd39a; }
+  .bad { color: #f08a80; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Backend Test — CASPer Collection</h1>
+    <p>Internal page. Verifies the Apps Script endpoint before the dry-run.</p>
+  </header>
+
+  <div class="banner">
+    Internal testing only — do not send this page to students.
+    Delete the TEST- rows from the Sheet after verifying.
+  </div>
+
+  <div class="card">
+    <h2>1 · Automated check — three test submissions</h2>
+    <p style="margin:0 0 4px; font-size:0.95rem;">Fires 4 sequential POSTs: one tiny fake video (tests the Drive-save path)
+    and 3 typed scenarios. Then confirm the rows landed in the Sheet and the
+    fake video file appears in the Drive folder.</p>
+    <button id="autoBtn">Send 4 test submissions (1 video + 3 typed)</button>
+    <div id="log">Ready. Endpoint: <span id="endpointShown"></span></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Manual check — pre-filled single submission</h2>
+    <label for="studentId">Student ID</label>
+    <input type="text" id="studentId" value="TEST-MANUAL">
+    <label for="promptId">Prompt</label>
+    <select id="promptId">
+      <option value="P1" selected>P1 — Exam photos</option>
+      <option value="P2">P2 — Timecard colleague</option>
+      <option value="P3">P3 — Withdrawn teammate</option>
+      <option value="P4">P4 — Clinic supplement advice</option>
+      <option value="P5">P5 — Roommate applicant</option>
+    </select>
+    <label for="responseA">Answer A</label>
+    <textarea id="responseA">Manual test, answer A. Verifies a hand-triggered POST lands in the Sheet with columns timestamp, student_id, prompt_id, question_id, response. Delete after checking.</textarea>
+    <label for="responseB">Answer B</label>
+    <textarea id="responseB">Manual test, answer B. Should appear as a second row for the same scenario. Delete after checking.</textarea>
+    <button id="manualBtn">Submit manual test</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG — must match collection_form.html
+// ============================================================
+const ENDPOINT_URL  = "PLACEHOLDER_APPS_SCRIPT_URL"; // ← paste the same Web App URL here
+const CONTACT_EMAIL = "PLACEHOLDER_MICHAEL_EMAIL";
+
+const logEl = document.getElementById("log");
+document.getElementById("endpointShown").textContent =
+  ENDPOINT_URL.startsWith("http") ? ENDPOINT_URL : "⚠ not configured yet";
+
+function log(line, cls) {
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = line + "\n";
+  logEl.appendChild(span);
+}
+
+async function post(payload) {
+  // text/plain on purpose — see collection_setup.md (CORS preflight note).
+  const res = await fetch(ENDPOINT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+    redirect: "follow"
+  });
+  let body = null;
+  try { body = await res.json(); } catch (_) {}
+  const ok = res.ok && (!body || body.status === "ok");
+  return { ok, http: res.status, body };
+}
+
+// Tiny fake "recording" (a few bytes) — verifies the Drive-save path without a real webcam.
+const FAKE_VIDEO_B64 = btoa("not a real video, just bytes for the smoke test");
+const TEST_ROWS = [
+  { type: "video", student_id: "TEST-V", prompt_id: "V1", question_id: "A",
+    mime_type: "video/webm", video_base64: FAKE_VIDEO_B64 },
+  { student_id: "TEST-A", prompt_id: "P1", answers: [
+      { question_id: "A", response: "Automated test one, answer A. Verifies a scenario POST writes one row per question. Safe to delete." },
+      { question_id: "B", response: "Automated test one, answer B. Should land as a second row for the same scenario. Safe to delete." } ] },
+  { student_id: "TEST-B", prompt_id: "P2", answers: [
+      { question_id: "A", response: "Automated test two, answer A. Verifies sequential submissions keep correct student and prompt IDs. Safe to delete." },
+      { question_id: "B", response: "" } ] },  // deliberately blank: timed-out answers must still record
+  { student_id: "TEST-C", prompt_id: "P3", answers: [
+      { question_id: "A", response: "Automated test three, answer A. Verifies the lock service handles back-to-back writes. Safe to delete." },
+      { question_id: "B", response: "Automated test three, answer B. Safe to delete." } ] }
+];
+
+document.getElementById("autoBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("autoBtn");
+  btn.disabled = true;
+  logEl.textContent = "";
+  if (!ENDPOINT_URL.startsWith("http")) {
+    log("✗ ENDPOINT_URL is still the placeholder — edit this file first.", "bad");
+    btn.disabled = false;
+    return;
+  }
+  let passed = 0;
+  for (const row of TEST_ROWS) {
+    const payload = { ...row, timestamp: new Date().toISOString() };
+    log("→ POST " + row.student_id + " / " + row.prompt_id + (row.type === "video" ? " (video)" : " (2 answers)") + " …");
+    try {
+      const r = await post(payload);
+      if (r.ok) { passed++; log("  ✓ OK (HTTP " + r.http + ")", "ok"); }
+      else      { log("  ✗ FAILED (HTTP " + r.http + ") " + JSON.stringify(r.body), "bad"); }
+    } catch (err) {
+      log("  ✗ NETWORK ERROR: " + err.message, "bad");
+    }
+  }
+  log("");
+  if (passed === TEST_ROWS.length) {
+    log("All " + passed + "/4 passed. Check the Sheet for 7 new TEST- rows (1 video + 6 typed) and the Drive folder for one tiny TEST-V__V1__A file.", "ok");
+  } else {
+    log(passed + "/3 passed. Check: URL correct? Deployed as 'Anyone'? New version deployed after edits? " +
+        "If stuck, contact " + CONTACT_EMAIL + ".", "bad");
+  }
+  btn.disabled = false;
+});
+
+document.getElementById("manualBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("manualBtn");
+  btn.disabled = true;
+  btn.textContent = "Submitting…";
+  const payload = {
+    student_id: document.getElementById("studentId").value.trim(),
+    prompt_id:  document.getElementById("promptId").value,
+    timestamp:  new Date().toISOString(),
+    answers: [
+      { question_id: "A", response: document.getElementById("responseA").value.trim() },
+      { question_id: "B", response: document.getElementById("responseB").value.trim() }
+    ]
+  };
+  try {
+    const r = await post(payload);
+    if (r.ok) log("✓ Manual submission OK (" + payload.student_id + " / " + payload.prompt_id + ")", "ok");
+    else      log("✗ Manual submission FAILED (HTTP " + r.http + ") " + JSON.stringify(r.body), "bad");
+  } catch (err) {
+    log("✗ Manual submission NETWORK ERROR: " + err.message, "bad");
+  }
+  btn.textContent = "Submit manual test";
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>

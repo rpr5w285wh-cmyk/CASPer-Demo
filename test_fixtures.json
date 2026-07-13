@@ -1,0 +1,44 @@
+[
+  {
+    "prompt_id": "P1",
+    "response": "PLACEHOLDER — swap in a real Q4 response from Nathan. Example shape: acknowledges the tension between loyalty and integrity, asks the friend about their situation first, refuses to use the photos, proposes concrete support (tutoring, talking to the professor about probation options), and explains why integrity protects everyone including the friend.",
+    "expected_quartile": 4,
+    "notes": "PLACEHOLDER. Replace with a real student response Nathan has scored Q4. Keep expected_quartile as Nathan's score, not yours. Set question_id to A or B matching the question the response answers.",
+    "question_id": "A"
+  },
+  {
+    "prompt_id": "P1",
+    "response": "PLACEHOLDER — swap in a real Q1 response. Example shape: 'I would use the photos too, everyone does it, and I wouldn't tell anyone because my friend needs the scholarship.'",
+    "expected_quartile": 1,
+    "notes": "PLACEHOLDER. Should trigger R6 (endorsing dishonest/illegal behavior) and force Q1. Set question_id to A or B matching the question the response answers.",
+    "question_id": "B"
+  },
+  {
+    "prompt_id": "P2",
+    "response": "PLACEHOLDER — swap in a real Q2 response. Example shape: vague 'I would try to help and maybe mention it to someone' with no concrete step (R2) and heavy restatement of the scenario (R3).",
+    "expected_quartile": 2,
+    "notes": "PLACEHOLDER. Tests vague-help + parroting combination. Set question_id to A or B matching the question the response answers.",
+    "question_id": "A"
+  },
+  {
+    "prompt_id": "P3",
+    "response": "PLACEHOLDER — swap in a real Q3 response. Example shape: reaches out to the teammate privately, considers their privacy AND the team's worry, suggests campus resources, but no follow-up plan.",
+    "expected_quartile": 3,
+    "notes": "PLACEHOLDER. Solid but not Q4 — missing follow-through should keep it at Q3 (R7/R8 marginal). Set question_id to A or B matching the question the response answers.",
+    "question_id": "B"
+  },
+  {
+    "prompt_id": "P4",
+    "response": "PLACEHOLDER — swap in a real Q2 response. Example shape: 'It's not really my place, the patient asked me not to make a big deal of it, so I would respect that and stay out of it.'",
+    "expected_quartile": 2,
+    "notes": "PLACEHOLDER. Should trigger R1 (staying uninvolved) despite patient-safety stakes. Arguably Q1 — use Nathan's real score. Set question_id to A or B matching the question the response answers.",
+    "question_id": "A"
+  },
+  {
+    "prompt_id": "P5",
+    "response": "PLACEHOLDER — swap in a real Q3/Q4 boundary response. Example shape: discloses the conflict to the chair immediately, offers to recuse from that applicant's evaluation, considers fairness to other applicants.",
+    "expected_quartile": 4,
+    "notes": "PLACEHOLDER. Boundary case — useful for measuring off-by-one behaviour between Q3 and Q4. Set question_id to A or B matching the question the response answers.",
+    "question_id": "B"
+  }
+]

@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CASPer Practice — Full Test</title>
+<style>
+  :root {
+    --ink:#1c2431; --muted:#5b6474; --line:#d4d9e2; --paper:#f7f8fa;
+    --card:#ffffff; --accent:#1f5fbf; --accent-dark:#174a97;
+    --ok:#1d7a4f; --bad:#b3372f; --warn-bg:#fff7e6; --warn:#9a6b00; --rec:#c62828;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Georgia,"Times New Roman",serif; background:var(--paper); color:var(--ink); line-height:1.55; }
+  .wrap { max-width:720px; margin:0 auto; padding:20px 16px 64px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:22px; }
+  h1 { font-size:1.4rem; margin:0 0 6px; }
+  h2 { font-size:1.1rem; margin:0 0 10px; }
+  p { margin:0 0 12px; }
+  ul { margin:0 0 12px; padding-left:20px; } li { margin-bottom:6px; }
+  .kicker { font-family:Verdana,Arial,sans-serif; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  label { display:block; font-family:Verdana,Arial,sans-serif; font-size:0.75rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); margin:16px 0 6px; }
+  input[type="text"], textarea { width:100%; font-family:Georgia,serif; font-size:1rem; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:4px; padding:10px 12px; }
+  textarea { min-height:130px; resize:vertical; }
+  input:focus, textarea:focus, button:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  button { margin-top:18px; width:100%; padding:13px; font-family:Verdana,Arial,sans-serif; font-size:0.95rem; font-weight:bold; color:#fff; background:var(--accent); border:none; border-radius:4px; cursor:pointer; }
+  button:hover:not(:disabled) { background:var(--accent-dark); }
+  button:disabled { background:var(--line); color:var(--muted); cursor:not-allowed; }
+  button.ghost { background:transparent; color:var(--muted); border:1px solid var(--line); font-weight:normal; }
+  button.ghost:hover { background:var(--paper); color:var(--ink); }
+
+  #statusbar { display:none; position:sticky; top:0; z-index:10; background:var(--ink); color:#fff; font-family:Verdana,Arial,sans-serif; font-size:0.8rem; padding:10px 16px; }
+  #statusbar .inner { max-width:720px; margin:0 auto; display:flex; justify-content:space-between; align-items:baseline; }
+  #timer { font-size:1.05rem; font-weight:bold; font-variant-numeric:tabular-nums; }
+  #timer.low { color:#ffb3ad; }
+  #uploadBadge { font-size:0.72rem; color:#9fb4d8; }
+
+  .scenario-box { background:var(--paper); border-left:3px solid var(--accent); padding:14px 16px; margin:12px 0 4px; font-size:1rem; }
+  .role-box { background:#eef3fb; border:1px solid #c8d6ef; border-radius:4px; padding:8px 12px; margin:0 0 10px; font-family:Verdana,Arial,sans-serif; font-size:0.8rem; color:var(--accent-dark); }
+  .q-label { margin-top:20px; }
+  .hint { font-family:Verdana,Arial,sans-serif; font-size:0.75rem; color:var(--muted); margin-top:5px; }
+  .wc { float:right; }
+  .warnbox { background:var(--warn-bg); border:1px solid var(--warn); color:var(--warn); border-radius:4px; padding:10px 14px; margin:0 0 16px; font-family:Verdana,Arial,sans-serif; font-size:0.8rem; display:none; }
+  .bignum { font-size:3rem; text-align:center; font-variant-numeric:tabular-nums; margin:14px 0; }
+  .center { text-align:center; }
+  .msg { margin-top:14px; padding:12px 14px; border-radius:4px; font-size:0.95rem; display:none; }
+  .msg.error { display:block; background:#fbeeec; border:1px solid var(--bad); color:var(--bad); }
+  .msg a { color:inherit; }
+  .screen { display:none; } .screen.active { display:block; }
+
+  video.preview { width:100%; max-width:420px; display:block; margin:10px auto; border-radius:6px; background:#000; transform:scaleX(-1); }
+  .recdot { display:inline-block; width:12px; height:12px; border-radius:50%; background:var(--rec); margin-right:8px; animation:blink 1s steps(1) infinite; vertical-align:baseline; }
+  @keyframes blink { 50% { opacity:0.2; } }
+  #recState { font-family:Verdana,Arial,sans-serif; font-weight:bold; text-align:center; margin:8px 0; }
+</style>
+</head>
+<body>
+
+<div id="statusbar"><div class="inner">
+  <span id="progressLabel"></span>
+  <span><span id="uploadBadge"></span> &nbsp; <span id="timer">–</span></span>
+</div></div>
+
+<div class="wrap">
+
+  <!-- INTRO -->
+  <div id="screen-intro" class="screen active"><div class="card">
+    <div class="kicker">CASPer Practice — Full Test</div>
+    <h1>Before you begin</h1>
+    <div id="mobileWarn" class="warnbox">This looks like a phone or small screen. The real Casper test is taken on a computer with a keyboard and webcam — please switch to one.</div>
+    <p>This session mirrors the full Casper format:</p>
+    <ul>
+      <li><strong>Section 1 — Video responses:</strong> 4 scenarios, 2 questions each shown one at a time. For each question: a 10-second countdown, then <strong>1 minute of recording</strong> that starts and stops automatically. No retakes, no playback.</li>
+      <li>Optional <strong>10-minute break</strong>, then <strong>Section 2 — Typed responses:</strong> 7 scenarios, 2 questions shown together, <strong>3:30</strong> to type both, auto-submit at zero. A 5-minute break is offered after the 4th typed scenario.</li>
+      <li>Every scenario starts with an optional 30-second reflection. You can never go back. Pasting is disabled; typos are not penalized.</li>
+      <li>Recordings upload in the background — a slow connection won't stop the test.</li>
+    </ul>
+    <p>Total: roughly 45–60 minutes without breaks. Quiet room, computer, working webcam and microphone.</p>
+    <label for="studentId">Student ID</label>
+    <input type="text" id="studentId" autocomplete="off" placeholder="e.g. S014">
+    <button id="startBtn" disabled>Continue to system check</button>
+  </div></div>
+
+  <!-- SYSTEM CHECK -->
+  <div id="screen-syscheck" class="screen"><div class="card">
+    <div class="kicker">System check</div>
+    <h2>Camera and microphone</h2>
+    <p>Allow camera and microphone access when your browser asks. You should see yourself below.</p>
+    <video id="checkPreview" class="preview" autoplay muted playsinline></video>
+    <div id="sysMsg" class="msg error"></div>
+    <button id="sysOkBtn" disabled>I can see myself — start Section 1</button>
+    <button id="sysRetryBtn" class="ghost" style="display:none;">Retry camera access</button>
+  </div></div>
+
+  <!-- SCENARIO -->
+  <div id="screen-scenario" class="screen"><div class="card">
+    <div class="kicker" id="scenKicker"></div>
+    <h2>Read the scenario</h2>
+    <div class="role-box" id="scenRole" style="display:none;"></div>
+    <div class="scenario-box" id="scenText"></div>
+    <p class="hint" id="scenHint"></p>
+    <button id="toReflectBtn">Continue</button>
+  </div></div>
+
+  <!-- REFLECTION -->
+  <div id="screen-reflect" class="screen"><div class="card center">
+    <div class="kicker">Reflection</div>
+    <h2>Take a moment to think about your response</h2>
+    <div class="bignum" id="reflectCount">30</div>
+    <button id="skipReflectBtn" class="ghost">Skip reflection</button>
+  </div></div>
+
+  <!-- VIDEO COUNTDOWN (10s, role redisplayed) -->
+  <div id="screen-vcountdown" class="screen"><div class="card center">
+    <div class="kicker" id="vcKicker"></div>
+    <div class="role-box" id="vcRole" style="display:none;"></div>
+    <p style="font-size:1.05rem;" id="vcQuestion"></p>
+    <p class="hint">Recording starts automatically in…</p>
+    <div class="bignum" id="vcCount">10</div>
+  </div></div>
+
+  <!-- RECORDING -->
+  <div id="screen-recording" class="screen"><div class="card">
+    <div class="kicker" id="recKicker"></div>
+    <p style="font-size:1.02rem; margin-bottom:6px;" id="recQuestion"></p>
+    <video id="recPreview" class="preview" autoplay muted playsinline></video>
+    <div id="recState"><span class="recdot"></span>Recording — stops automatically</div>
+  </div></div>
+
+  <!-- BREAK -->
+  <div id="screen-break" class="screen"><div class="card center">
+    <div class="kicker">Optional break</div>
+    <h2 id="breakTitle"></h2>
+    <div class="bignum" id="breakCount"></div>
+    <p class="hint">The test continues automatically when the break ends.</p>
+    <button id="skipBreakBtn" class="ghost">Skip break — continue now</button>
+  </div></div>
+
+  <!-- TYPED ANSWER -->
+  <div id="screen-answer" class="screen"><div class="card">
+    <div class="kicker" id="ansKicker"></div>
+    <div class="scenario-box" id="ansScenText"></div>
+    <label class="q-label" for="answerA">Question A</label>
+    <p id="questionA" style="margin-bottom:6px;"></p>
+    <textarea id="answerA"></textarea>
+    <div class="hint"><span class="wc" id="wcA">0 words</span>&nbsp;</div>
+    <label class="q-label" for="answerB">Question B</label>
+    <p id="questionB" style="margin-bottom:6px;"></p>
+    <textarea id="answerB"></textarea>
+    <div class="hint"><span class="wc" id="wcB">0 words</span>&nbsp;</div>
+    <button id="submitBtn">Submit answers early</button>
+    <p class="hint" style="margin-top:8px;">Answers submit automatically at 0:00.</p>
+  </div></div>
+
+  <!-- DONE -->
+  <div id="screen-done" class="screen"><div class="card">
+    <div class="kicker">Complete</div>
+    <h1>Test complete</h1>
+    <p id="doneSummary"></p>
+    <div id="queueMsg" class="msg error"></div>
+    <button id="retryQueueBtn" style="display:none;">Retry sending unsent responses</button>
+  </div></div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIG — replace before sending to students
+// ============================================================
+const ENDPOINT_URL  = "PLACEHOLDER_APPS_SCRIPT_URL";
+const CONTACT_EMAIL = "PLACEHOLDER_MICHAEL_EMAIL";
+
+// FRONT-END-ONLY MODE: if ENDPOINT_URL is still the placeholder, nothing is
+// sent anywhere — captures are summarized on the end screen instead.
+const BACKEND_CONFIGURED = ENDPOINT_URL.indexOf("http") === 0;
+
+// DEMO MODE: open the page with ?demo=1 for a ~2-minute walkthrough —
+// short timers, 1 video + 1 typed scenario. Real timings otherwise.
+const DEMO = new URLSearchParams(location.search).get("demo") === "1";
+const REFLECTION_SECONDS = DEMO ? 5 : 30;      // optional reflection, every scenario
+const VIDEO_COUNTDOWN_SECONDS = DEMO ? 3 : 10; // pre-recording countdown per question
+const RECORD_SECONDS = DEMO ? 10 : 60;         // 1 minute per video question
+const TYPED_SECONDS = DEMO ? 45 : 210;         // 3.5 minutes per typed scenario
+const BREAK_AFTER_VIDEO_MIN = DEMO ? 0.25 : 10;// optional break after Section 1
+const BREAK_MID_TYPED_MIN = DEMO ? 0.25 : 5;   // optional break after 4th typed scenario
+
+// SCENARIOS — hardcoded from sample_prompts.json (video first, as on the real
+// test). Question labels are A/B; Q1–Q4 always means quartile in this project.
+const SCENARIOS = [
+  { prompt_id:"V1", section:"video", role:"You are a close friend.",
+    text:"Your friend calls you, upset. They just found out they were passed over for a promotion they were promised, and the job went to the manager's nephew. They are talking about quitting on the spot tomorrow morning.",
+    questions:[ "What do you say to your friend right now?",
+      "Your friend asks whether they should confront the manager publicly at the morning meeting. How do you respond?" ] },
+  { prompt_id:"V2", section:"video", role:"You are a co-worker.",
+    text:"A colleague approaches you at work, visibly stressed. They admit they made an error in a report that has already gone to a client, and they are considering saying nothing and hoping no one notices.",
+    questions:[ "How do you respond to your colleague?",
+      "Your colleague says that flagging the error will get them fired because they are on a final warning. What do you say now?" ] },
+  { prompt_id:"V3", section:"video", role:"Answer as yourself.",
+    text:"Think about a time you received criticism that you initially felt was unfair.",
+    questions:[ "Describe the situation and how you reacted at the time.",
+      "Looking back, what did you learn from it, and what would you do differently?" ] },
+  { prompt_id:"V4", section:"video", role:"You are a neighbour.",
+    text:"Your elderly neighbour, who lives alone, tells you their adult son has been taking money from their account 'to manage things', and they seem confused about how much is left. They ask you not to mention it to anyone because they don't want to cause family trouble.",
+    questions:[ "What do you say to your neighbour?",
+      "What, if anything, would you do after this conversation, and why?" ] },
+  { prompt_id:"P1", section:"typed",
+    text:"You are studying with a close friend the night before a major exam. They show you photos of the exam questions, which they say a student from last term sent them. Your friend is on academic probation and will lose their scholarship if they fail.",
+    questions:[ "What would you do in this situation, and why?",
+      "Your friend says everyone in the class already has the photos and refusing only hurts you both. How does this change your response, if at all?" ] },
+  { prompt_id:"P2", section:"typed",
+    text:"You work part-time at a pharmacy. You notice a well-liked senior colleague repeatedly leaving early while asking others to punch out their timecard for them. The manager has praised this colleague publicly as a model employee.",
+    questions:[ "What would you do in this situation, and why?",
+      "What factors would you consider before deciding whether to involve the manager?" ] },
+  { prompt_id:"P3", section:"typed",
+    text:"A teammate on your intramural team has become withdrawn, missed two games, and posted something online that worried other teammates, though it wasn't explicit. Some teammates want to say something; others feel it's private.",
+    questions:[ "What would you do, and why?",
+      "How would you balance your teammate's privacy against the team's concern for their wellbeing?" ] },
+  { prompt_id:"P4", section:"typed",
+    text:"You are volunteering at a clinic. A patient quietly tells you that another volunteer gave them advice about stopping their prescribed medication in favour of a supplement the volunteer sells on the side. The patient asks you not to make a big deal of it.",
+    questions:[ "How would you respond to the patient, and why?",
+      "What, if anything, would you do about the other volunteer?" ] },
+  { prompt_id:"P5", section:"typed",
+    text:"You are on a hiring committee for a student club. One applicant is your roommate, who doesn't know you are on the committee. They are qualified, but so are several other applicants. The committee chair hasn't asked about conflicts of interest.",
+    questions:[ "What would you do in this situation, and why?",
+      "Describe a time you had to balance a personal relationship against a responsibility to others. What did you learn?" ] },
+  { prompt_id:"P6", section:"typed",
+    text:"You are leading a group project worth 40% of the course grade. One member has contributed almost nothing, but privately tells you they have been dealing with a serious family situation and asks you not to tell the others, who want to report the member to the professor.",
+    questions:[ "What would you do in this situation, and why?",
+      "How would you respond to the group members who want to report your teammate?" ] },
+  { prompt_id:"P7", section:"typed",
+    text:"You work at a busy café. A regular customer loudly accuses a new coworker of getting their order wrong on purpose and demands the coworker be fired. You saw the whole exchange: the order slip was ambiguous and the mistake was understandable.",
+    questions:[ "How would you handle this situation in the moment?",
+      "What would you say to your coworker afterward, and why?" ] }
+];
+if (DEMO) {
+  const firstVideo = SCENARIOS.find(s => s.section === "video");
+  const firstTyped = SCENARIOS.find(s => s.section === "typed");
+  SCENARIOS.length = 0; SCENARIOS.push(firstVideo, firstTyped);
+}
+const FIRST_TYPED_IDX = SCENARIOS.findIndex(s => s.section === "typed");
+const MID_TYPED_BREAK_IDX = FIRST_TYPED_IDX + 4;   // break before 5th typed scenario
+
+// ============================================================
+// Guarded localStorage for small state (drafts, position, deadlines)
+// ============================================================
+const STORE_KEY = DEMO ? "casper_collector_demo" : "casper_collector_v3";
+function loadState(){ try { const r = localStorage.getItem(STORE_KEY); return r ? JSON.parse(r) : null; } catch(_){ return null; } }
+function saveState(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(_){} }
+function clearState(){ try { localStorage.removeItem(STORE_KEY); } catch(_){} }
+
+let state = loadState() || {
+  student_id:"", idx:0, phase:"intro", qIdx:0,
+  deadline:null, drafts:{}, textQueue:[], sentText:0, sentVideo:0, demoLog:[],
+  breaksTaken:{ afterVideo:false, midTyped:false }
+};
+
+// ============================================================
+// IndexedDB queue for recordings (blobs are too big for localStorage)
+// ============================================================
+let db = null;
+function openDB(){
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open("casper_uploads", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("pending", { keyPath:"id" });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch(_) { resolve(null); }
+  });
+}
+function idbPut(rec){ if(!db) return; try { db.transaction("pending","readwrite").objectStore("pending").put(rec); } catch(_){} }
+function idbDelete(id){ if(!db) return; try { db.transaction("pending","readwrite").objectStore("pending").delete(id); } catch(_){} }
+function idbAll(){
+  return new Promise((resolve) => {
+    if(!db) return resolve([]);
+    try {
+      const req = db.transaction("pending","readonly").objectStore("pending").getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    } catch(_) { resolve([]); }
+  });
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+const $ = (id) => document.getElementById(id);
+let tick = null, mediaStream = null, recorder = null, chunks = [];
+let uploadsInFlight = 0, uploadsFailed = 0;
+
+function show(phase){
+  ["intro","syscheck","scenario","reflect","vcountdown","recording","break","answer","done"]
+    .forEach(p => $("screen-"+p).classList.toggle("active", p === phase));
+  $("statusbar").style.display =
+    ["reflect","vcountdown","recording","answer","break"].includes(phase) ? "block" : "none";
+  state.phase = phase; saveState();
+}
+function fmt(sec){ const m = Math.floor(sec/60), s = sec%60; return m + ":" + String(s).padStart(2,"0"); }
+function words(t){ return t.trim() ? t.trim().split(/\s+/).length : 0; }
+function scen(){ return SCENARIOS[state.idx]; }
+function draft(){ const pid = scen().prompt_id; if(!state.drafts[pid]) state.drafts[pid] = {A:"",B:""}; return state.drafts[pid]; }
+function progressText(){
+  const s = scen();
+  if (s.section === "video") return "Section 1 · Video · Scenario " + (state.idx+1) + " of " + FIRST_TYPED_IDX;
+  return "Section 2 · Typed · Scenario " + (state.idx - FIRST_TYPED_IDX + 1) + " of " + (SCENARIOS.length - FIRST_TYPED_IDX);
+}
+function updateUploadBadge(){
+  $("uploadBadge").textContent =
+    uploadsInFlight > 0 ? ("uploading " + uploadsInFlight + "…") :
+    uploadsFailed  > 0 ? (uploadsFailed + " queued") : "";
+}
+function clearTick(){ if (tick) clearInterval(tick); tick = null; }
+
+// ============================================================
+// Network
+// ============================================================
+async function post(payload){
+  // text/plain on purpose — Apps Script doesn't answer CORS preflight.
+  const res = await fetch(ENDPOINT_URL, {
+    method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify(payload), redirect:"follow"
+  });
+  let ok = res.ok;
+  try { const d = await res.json(); ok = ok && d.status === "ok"; } catch(_){}
+  if (!ok) throw new Error("HTTP " + res.status);
+}
+
+async function submitTyped(){
+  const d = draft();
+  const payload = { type:"typed", student_id:state.student_id, prompt_id:scen().prompt_id,
+    timestamp:new Date().toISOString(),
+    answers:[ {question_id:"A", response:d.A.trim()}, {question_id:"B", response:d.B.trim()} ] };
+  if (!BACKEND_CONFIGURED){
+    payload.answers.forEach(a => state.demoLog.push({
+      prompt_id:payload.prompt_id, question_id:a.question_id, type:"typed",
+      detail:(a.response ? words(a.response) + " words" : "blank (timed out)") }));
+    state.sentText++; saveState(); return;
+  }
+  try { await post(payload); state.sentText++; }
+  catch(_) { state.textQueue.push(payload); }
+  saveState();
+}
+
+// Fire-and-track background video upload; never blocks the test flow.
+function uploadRecording(promptId, questionId, blob, mime){
+  if (!BACKEND_CONFIGURED){
+    state.demoLog.push({ prompt_id:promptId, question_id:questionId, type:"video",
+      detail:(blob.size/1048576).toFixed(1) + " MB recording (" + (mime||"video/webm") + ")" });
+    state.sentVideo++; saveState(); return;
+  }
+  const id = state.student_id + "_" + promptId + "_" + questionId + "_" + Date.now();
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const b64 = String(reader.result).split(",")[1] || "";
+    const payload = { type:"video", student_id:state.student_id, prompt_id:promptId,
+      question_id:questionId, timestamp:new Date().toISOString(),
+      mime_type:(mime || "video/webm"), video_base64:b64 };
+    idbPut({ id, payload });               // survives refresh until confirmed sent
+    uploadsInFlight++; updateUploadBadge();
+    try { await post(payload); state.sentVideo++; idbDelete(id); }
+    catch(_) { uploadsFailed++; }          // stays in IndexedDB for retry
+    uploadsInFlight--; updateUploadBadge(); saveState();
+  };
+  reader.readAsDataURL(blob);
+}
+
+async function flushQueues(){
+  if (!BACKEND_CONFIGURED) return;
+  // typed
+  const remaining = [];
+  for (const p of state.textQueue){ try { await post(p); state.sentText++; } catch(_){ remaining.push(p); } }
+  state.textQueue = remaining;
+  // video (from IndexedDB)
+  const pend = await idbAll();
+  uploadsFailed = 0;
+  for (const rec of pend){
+    try { await post(rec.payload); state.sentVideo++; idbDelete(rec.id); }
+    catch(_){ uploadsFailed++; }
+  }
+  updateUploadBadge(); saveState();
+}
+
+// ============================================================
+// Camera
+// ============================================================
+async function ensureStream(){
+  if (mediaStream && mediaStream.getTracks().some(t => t.readyState === "live")) return mediaStream;
+  mediaStream = await navigator.mediaDevices.getUserMedia({
+    video:{ width:{ideal:640}, height:{ideal:480}, frameRate:{ideal:24} }, audio:true });
+  return mediaStream;
+}
+function stopStream(){
+  if (mediaStream){ mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+}
+function pickMime(){
+  const opts = ["video/webm;codecs=vp8,opus","video/webm","video/mp4"];
+  for (const m of opts){ if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; }
+  return "";
+}
+
+// ============================================================
+// Flow
+// ============================================================
+function startScenario(){
+  clearTick();
+  const s = scen();
+  $("scenKicker").textContent = progressText();
+  $("progressLabel").textContent = progressText();
+  $("scenText").textContent = s.text;
+  $("scenRole").style.display = s.role ? "block" : "none";
+  $("scenRole").textContent = s.role || "";
+  $("scenHint").textContent = s.section === "video"
+    ? "Next: optional 30-second reflection, then each question one at a time — 10-second countdown, then 1 minute of recording."
+    : "Next: optional 30-second reflection, then 2 questions with a 3:30 timer.";
+  state.qIdx = 0; state.deadline = null;
+  show("scenario");
+}
+
+function startReflection(){
+  clearTick();
+  let left = REFLECTION_SECONDS;
+  $("reflectCount").textContent = left;
+  $("timer").textContent = "–"; $("timer").className = "";
+  show("reflect");
+  tick = setInterval(() => {
+    left--; $("reflectCount").textContent = left;
+    if (left <= 0) afterReflection();
+  }, 1000);
+}
+function afterReflection(){
+  clearTick();
+  scen().section === "video" ? startVideoCountdown() : startTyped();
+}
+
+// ---- video question loop ----
+async function startVideoCountdown(){
+  clearTick();
+  const s = scen();
+  $("vcKicker").textContent = progressText() + " · Question " + (state.qIdx === 0 ? "A" : "B");
+  $("vcRole").style.display = s.role ? "block" : "none";
+  $("vcRole").textContent = s.role || "";
+  $("vcQuestion").textContent = s.questions[state.qIdx];
+  show("vcountdown");
+  try { await ensureStream(); }             // warm up while counting down
+  catch(_) { /* handled again at record time */ }
+  let left = VIDEO_COUNTDOWN_SECONDS;
+  $("vcCount").textContent = left;
+  $("timer").textContent = "–"; $("timer").className = "";
+  tick = setInterval(() => {
+    left--; $("vcCount").textContent = left;
+    if (left <= 0) startRecording();
+  }, 1000);
+}
+
+async function startRecording(){
+  clearTick();
+  const s = scen();
+  $("recKicker").textContent = progressText() + " · Question " + (state.qIdx === 0 ? "A" : "B");
+  $("recQuestion").textContent = s.questions[state.qIdx];
+  show("recording");
+  let stream;
+  try { stream = await ensureStream(); }
+  catch(err){
+    // Camera lost mid-test: record nothing, move on, note it in the row.
+    uploadRecordingFailure(s.prompt_id, state.qIdx === 0 ? "A" : "B", "camera unavailable: " + err.name);
+    return nextVideoQuestion();
+  }
+  $("recPreview").srcObject = stream;
+  chunks = [];
+  const mime = pickMime();
+  recorder = new MediaRecorder(stream, mime ? { mimeType:mime, videoBitsPerSecond:900000, audioBitsPerSecond:64000 } : undefined);
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: mime || "video/webm" });
+    uploadRecording(s.prompt_id, state.qIdx === 0 ? "A" : "B", blob, mime || "video/webm");
+    nextVideoQuestion();
+  };
+  recorder.start();
+  let left = RECORD_SECONDS;
+  $("timer").textContent = fmt(left); $("timer").className = "";
+  tick = setInterval(() => {
+    left--;
+    $("timer").textContent = fmt(left);
+    $("timer").className = left <= 10 ? "low" : "";
+    if (left <= 0){ clearTick(); if (recorder && recorder.state !== "inactive") recorder.stop(); }
+  }, 1000);
+}
+
+function uploadRecordingFailure(promptId, questionId, note){
+  if (!BACKEND_CONFIGURED){
+    state.demoLog.push({ prompt_id:promptId, question_id:questionId, type:"video",
+      detail:"recording failed: " + note });
+    saveState(); return;
+  }
+  const payload = { type:"video", student_id:state.student_id, prompt_id:promptId,
+    question_id:questionId, timestamp:new Date().toISOString(),
+    mime_type:"", video_base64:"", note:note };
+  state.textQueue.push(payload); saveState();   // tiny payload; text queue is fine
+}
+
+function nextVideoQuestion(){
+  clearTick();
+  if (state.qIdx === 0){ state.qIdx = 1; saveState(); startVideoCountdown(); return; }
+  advanceScenario();
+}
+
+// ---- typed loop (unchanged behaviour from v2) ----
+function startTyped(){
+  clearTick();
+  const s = scen(), d = draft();
+  $("ansKicker").textContent = progressText();
+  $("ansScenText").textContent = s.text;
+  $("questionA").textContent = s.questions[0];
+  $("questionB").textContent = s.questions[1];
+  $("answerA").value = d.A; $("answerB").value = d.B;
+  updateCounts();
+  if (!state.deadline) state.deadline = Date.now() + TYPED_SECONDS * 1000;
+  show("answer");
+  $("answerA").focus();
+  tickTyped();
+  tick = setInterval(tickTyped, 250);
+}
+function tickTyped(){
+  const left = Math.max(0, Math.ceil((state.deadline - Date.now()) / 1000));
+  $("timer").textContent = fmt(left);
+  $("timer").className = left <= 30 ? "low" : "";
+  if (left <= 0) finishTyped();
+}
+async function finishTyped(){
+  clearTick();
+  $("submitBtn").disabled = true;
+  await submitTyped();
+  $("submitBtn").disabled = false;
+  state.deadline = null;
+  advanceScenario();
+}
+
+// ---- section transitions + breaks ----
+function advanceScenario(){
+  state.idx++; state.qIdx = 0; saveState();
+  if (state.idx >= SCENARIOS.length) return finishTest();
+  if (state.idx === FIRST_TYPED_IDX && !state.breaksTaken.afterVideo){
+    state.breaksTaken.afterVideo = true; saveState();
+    stopStream();                                  // camera no longer needed
+    return startBreak(BREAK_AFTER_VIDEO_MIN, "Section 1 complete — optional 10-minute break");
+  }
+  if (state.idx === MID_TYPED_BREAK_IDX && !state.breaksTaken.midTyped){
+    state.breaksTaken.midTyped = true; saveState();
+    return startBreak(BREAK_MID_TYPED_MIN, "Optional 5-minute break");
+  }
+  startScenario();
+}
+function startBreak(minutes, title){
+  clearTick();
+  $("breakTitle").textContent = title;
+  let left = minutes * 60;
+  $("breakCount").textContent = fmt(left);
+  $("timer").textContent = "–"; $("timer").className = "";
+  show("break");
+  flushQueues();                                   // good moment to retry uploads
+  tick = setInterval(() => {
+    left--; $("breakCount").textContent = fmt(left);
+    if (left <= 0){ clearTick(); startScenario(); }
+  }, 1000);
+}
+
+async function finishTest(){
+  clearTick(); stopStream();
+  show("done");
+  $("doneSummary").textContent = "Finishing uploads…";
+  await flushQueues();
+  renderDone();
+}
+async function renderDone(){
+  if (!BACKEND_CONFIGURED){
+    let html = "Front-end prototype — nothing was uploaded. In the live version, " +
+      "these land as rows in a Google Sheet (typed answers + transcripts) and " +
+      "recordings in a Drive folder:<br><br>";
+    html += state.demoLog.map(e =>
+      "• <b>" + e.prompt_id + "/" + e.question_id + "</b> (" + e.type + ") — " + e.detail
+    ).join("<br>") || "(nothing captured)";
+    $("doneSummary").innerHTML = html;
+    $("queueMsg").style.display = "none"; $("retryQueueBtn").style.display = "none";
+    clearState();
+    return;
+  }
+  const pendingVideos = (await idbAll()).length;
+  const unsent = state.textQueue.length + pendingVideos;
+  if (unsent === 0){
+    $("doneSummary").textContent = "Thanks — all your responses and recordings were received at " +
+      new Date().toLocaleTimeString() + ". You can close this tab.";
+    $("queueMsg").style.display = "none"; $("retryQueueBtn").style.display = "none";
+    clearState();
+  } else {
+    $("doneSummary").textContent = "Your test is complete, but some responses haven't reached the server yet.";
+    $("queueMsg").innerHTML = unsent + " item(s) still to send (recordings can be large). Keep this tab open and click retry. " +
+      "If it keeps failing, contact Michael at " +
+      '<a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + "</a> — everything is saved in this browser.";
+    $("queueMsg").className = "msg error";
+    $("retryQueueBtn").style.display = "block";
+  }
+}
+
+// ============================================================
+// Wiring
+// ============================================================
+$("studentId").addEventListener("input", () => { $("startBtn").disabled = $("studentId").value.trim() === ""; });
+$("startBtn").addEventListener("click", async () => {
+  state.student_id = (DEMO ? "DEMO-" : "") + $("studentId").value.trim();
+  state.idx = 0; state.qIdx = 0; state.drafts = {}; state.textQueue = [];
+  state.sentText = 0; state.sentVideo = 0;
+  state.breaksTaken = { afterVideo:false, midTyped:false };
+  saveState();
+  show("syscheck"); runSysCheck();
+});
+async function runSysCheck(){
+  $("sysOkBtn").disabled = true; $("sysMsg").style.display = "none"; $("sysRetryBtn").style.display = "none";
+  try {
+    const stream = await ensureStream();
+    $("checkPreview").srcObject = stream;
+    $("sysOkBtn").disabled = false;
+  } catch(err){
+    $("sysMsg").className = "msg error";
+    $("sysMsg").textContent = "Camera/microphone access failed (" + err.name + "). Check browser permissions and that no other app is using the camera, then retry.";
+    $("sysRetryBtn").style.display = "block";
+  }
+}
+$("sysRetryBtn").addEventListener("click", runSysCheck);
+$("sysOkBtn").addEventListener("click", startScenario);
+$("toReflectBtn").addEventListener("click", startReflection);
+$("skipReflectBtn").addEventListener("click", afterReflection);
+$("skipBreakBtn").addEventListener("click", () => { clearTick(); startScenario(); });
+$("submitBtn").addEventListener("click", finishTyped);
+$("retryQueueBtn").addEventListener("click", async () => {
+  $("retryQueueBtn").disabled = true; await flushQueues(); $("retryQueueBtn").disabled = false; renderDone();
+});
+
+function updateCounts(){
+  $("wcA").textContent = words($("answerA").value) + " words";
+  $("wcB").textContent = words($("answerB").value) + " words";
+}
+["answerA","answerB"].forEach(id => {
+  const el = $(id);
+  el.addEventListener("input", () => {
+    const d = draft(); d.A = $("answerA").value; d.B = $("answerB").value;
+    updateCounts(); saveState();
+  });
+  el.addEventListener("paste", (e) => e.preventDefault());
+  el.addEventListener("drop",  (e) => e.preventDefault());
+});
+
+if (Math.min(window.screen.width, window.innerWidth) < 700) $("mobileWarn").style.display = "block";
+if (DEMO) {
+  const b = document.createElement("div");
+  b.className = "warnbox"; b.style.display = "block";
+  b.textContent = BACKEND_CONFIGURED
+    ? "DEMO MODE — short timers, 1 video + 1 typed scenario. Rows land in the sheet prefixed DEMO-."
+    : "DEMO MODE — short timers, 1 video + 1 typed scenario. Front-end only: nothing is uploaded or stored.";
+  document.querySelector("#screen-intro .card").prepend(b);
+}
+window.addEventListener("beforeunload", (e) => {
+  if (["recording","vcountdown"].includes(state.phase)){ e.preventDefault(); e.returnValue = ""; }
+});
+
+// ============================================================
+// Refresh recovery. Typed: deadline persists (no free time).
+// Video: recordings can't survive a refresh, so the CURRENT question
+// restarts at its countdown; already-uploaded/queued ones are safe in IndexedDB.
+// ============================================================
+(async function init(){
+  db = await openDB();
+  if (!state.student_id || state.phase === "intro"){ show("intro"); return; }
+  if (state.phase === "done"){ show("done"); renderDone(); return; }
+  if (state.idx >= SCENARIOS.length){ finishTest(); return; }
+  if (state.phase === "answer" && state.deadline){
+    if (Date.now() >= state.deadline){ finishTyped(); return; }
+    startTyped(); return;
+  }
+  if (["vcountdown","recording"].includes(state.phase)){ startVideoCountdown(); return; }
+  if (state.phase === "break"){ startScenario(); return; }   // break forfeited on refresh
+  startScenario();
+})();
+</script>
+</body>
+</html>
