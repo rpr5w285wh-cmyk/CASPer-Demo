@@ -70,9 +70,9 @@
     <div id="mobileWarn" class="warnbox">This looks like a phone or small screen. The real CASPer® test is taken on a computer with a keyboard and webcam — please switch to one.</div>
     <p>This session mirrors the full CASPer® format:</p>
     <ul>
-      <li><strong>Section 1 — Video responses:</strong> 4 scenarios, 2 questions each shown one at a time. For each question: a 10-second countdown, then <strong>1 minute of recording</strong> that starts and stops automatically. No retakes, no playback.</li>
+      <li><strong>Section 1 — Video responses:</strong> 4 scenarios, 2 questions each shown one at a time. Role-play scenarios open with a 10-second screen stating your role. For each question: a 10-second countdown to read it, then <strong>1 minute of recording</strong> that starts and stops automatically. No retakes, no playback.</li>
       <li>Optional <strong>10-minute break</strong>, then <strong>Section 2 — Typed responses:</strong> 7 scenarios, 2 questions shown together, <strong>3:30</strong> to type both, auto-submit at zero. A 5-minute break is offered after the 4th typed scenario.</li>
-      <li>Every scenario starts with an optional 30-second reflection. You can never go back. Pasting is disabled; typos are not penalized.</li>
+      <li>Each scenario is shown for a timed <strong>30-second read</strong>, followed by an optional 30-second reflection with the scenario still on screen. You can never go back. Pasting is disabled; typos are not penalized.</li>
       <li>Recordings upload in the background — a slow connection won't stop the test.</li>
     </ul>
     <p>Total: roughly 45–60 minutes without breaks. Quiet room, computer, working webcam and microphone.</p>
@@ -95,7 +95,17 @@
     <button id="sysRetryBtn" class="ghost" style="display:none;">Retry camera access</button>
   </div></div>
 
-  <!-- SCENARIO -->
+  <!-- ROLE CARD (10s, situational prompts only) -->
+  <div id="screen-rolecard" class="screen"><div class="card center">
+    <div class="kicker" id="roleKicker"></div>
+    <h2>Your role</h2>
+    <div class="role-box" id="roleCardText" style="font-size:1rem; padding:14px 16px;"></div>
+    <p class="hint">The scenario appears automatically in…</p>
+    <div class="bignum" id="roleCount">10</div>
+    <button id="skipRoleBtn" class="ghost">Skip — show the scenario</button>
+  </div></div>
+
+  <!-- SCENARIO (timed read, auto-advances) -->
   <div id="screen-scenario" class="screen"><div class="card">
     <div class="kicker" id="scenKicker"></div>
     <h2>Read the scenario</h2>
@@ -103,12 +113,15 @@
     <div class="scenario-box" id="scenText"></div>
     <p class="hint" id="scenHint"></p>
     <button id="toReflectBtn">Continue</button>
+    <p class="hint" id="scenCount" style="margin-top:8px;"></p>
   </div></div>
 
-  <!-- REFLECTION -->
-  <div id="screen-reflect" class="screen"><div class="card center">
+  <!-- REFLECTION (scenario stays on screen; questions not yet revealed) -->
+  <div id="screen-reflect" class="screen"><div class="card">
     <div class="kicker">Reflection</div>
-    <h2>Take a moment to think about your response</h2>
+    <div class="role-box" id="reflectRole" style="display:none;"></div>
+    <div class="scenario-box" id="reflectScenText"></div>
+    <p class="hint">Reflect on the scenario. The questions appear when the timer ends.</p>
     <div class="bignum" id="reflectCount">30</div>
     <button id="skipReflectBtn" class="ghost">Skip reflection</button>
   </div></div>
@@ -126,8 +139,9 @@
   <!-- RECORDING -->
   <div id="screen-recording" class="screen"><div class="card">
     <div class="kicker" id="recKicker"></div>
-    <p style="font-size:1.02rem; margin-bottom:6px;" id="recQuestion"></p>
     <video id="recPreview" class="preview" autoplay muted playsinline></video>
+    <!-- Question sits BELOW the recording box, as on the real test -->
+    <p style="font-size:1.02rem; margin:6px 0;" id="recQuestion"></p>
     <div id="recState"><span class="recdot"></span>Recording — stops automatically</div>
     <button id="stopRecordingBtn" class="ghost">Stop recording early — continue</button>
   </div></div>
@@ -182,6 +196,8 @@ const BACKEND_CONFIGURED = ENDPOINT_URL.indexOf("http") === 0;
 // DEMO MODE: open the page with ?demo=1 for a ~2-minute walkthrough —
 // short timers, 1 video + 1 typed scenario. Real timings otherwise.
 const DEMO = new URLSearchParams(location.search).get("demo") === "1";
+const ROLE_CARD_SECONDS = DEMO ? 3 : 10;       // role-only screen before situational scenarios
+const SCENARIO_READ_SECONDS = DEMO ? 8 : 30;   // timed scenario reading, auto-advances
 const REFLECTION_SECONDS = DEMO ? 5 : 30;      // optional reflection, every scenario
 const VIDEO_COUNTDOWN_SECONDS = DEMO ? 3 : 10; // pre-recording countdown per question
 const RECORD_SECONDS = DEMO ? 10 : 60;         // 1 minute per video question
@@ -191,48 +207,56 @@ const BREAK_MID_TYPED_MIN = DEMO ? 0.25 : 5;   // optional break after 4th typed
 
 // SCENARIOS — hardcoded from sample_prompts.json (video first, as on the real
 // test). Question labels are A/B; Q1–Q4 always means quartile in this project.
+// Each prompt is tagged with a kind: "situational" (role-play / third-person
+// dilemma) or "personal" (recall-your-own-experience). KIND_UX maps each kind
+// to its UX variances — the role card is shown only for situational prompts,
+// mirroring the real test.
+const KIND_UX = {
+  situational: { roleCard: true },
+  personal:    { roleCard: false }
+};
 const SCENARIOS = [
-  { prompt_id:"V1", section:"video", role:"You are a close friend.",
+  { prompt_id:"V1", section:"video", kind:"situational", role:"You are a close friend.",
     text:"Your friend calls you, upset. They just found out they were passed over for a promotion they were promised, and the job went to the manager's nephew. They are talking about quitting on the spot tomorrow morning.",
     questions:[ "What do you say to your friend right now?",
       "Your friend asks whether they should confront the manager publicly at the morning meeting. How do you respond?" ] },
-  { prompt_id:"V2", section:"video", role:"You are a co-worker.",
+  { prompt_id:"V2", section:"video", kind:"situational", role:"You are a co-worker.",
     text:"A colleague approaches you at work, visibly stressed. They admit they made an error in a report that has already gone to a client, and they are considering saying nothing and hoping no one notices.",
     questions:[ "How do you respond to your colleague?",
       "Your colleague says that flagging the error will get them fired because they are on a final warning. What do you say now?" ] },
-  { prompt_id:"V3", section:"video", role:"Answer as yourself.",
+  { prompt_id:"V3", section:"video", kind:"personal", role:"Answer as yourself.",
     text:"Think about a time you received criticism that you initially felt was unfair.",
     questions:[ "Describe the situation and how you reacted at the time.",
       "Looking back, what did you learn from it, and what would you do differently?" ] },
-  { prompt_id:"V4", section:"video", role:"You are a neighbour.",
+  { prompt_id:"V4", section:"video", kind:"situational", role:"You are a neighbour.",
     text:"Your elderly neighbour, who lives alone, tells you their adult son has been taking money from their account 'to manage things', and they seem confused about how much is left. They ask you not to mention it to anyone because they don't want to cause family trouble.",
     questions:[ "What do you say to your neighbour?",
       "What, if anything, would you do after this conversation, and why?" ] },
-  { prompt_id:"P1", section:"typed",
+  { prompt_id:"P1", section:"typed", kind:"situational",
     text:"You are studying with a close friend the night before a major exam. They show you photos of the exam questions, which they say a student from last term sent them. Your friend is on academic probation and will lose their scholarship if they fail.",
     questions:[ "What would you do in this situation, and why?",
       "Your friend says everyone in the class already has the photos and refusing only hurts you both. How does this change your response, if at all?" ] },
-  { prompt_id:"P2", section:"typed",
+  { prompt_id:"P2", section:"typed", kind:"situational",
     text:"You work part-time at a pharmacy. You notice a well-liked senior colleague repeatedly leaving early while asking others to punch out their timecard for them. The manager has praised this colleague publicly as a model employee.",
     questions:[ "What would you do in this situation, and why?",
       "What factors would you consider before deciding whether to involve the manager?" ] },
-  { prompt_id:"P3", section:"typed",
+  { prompt_id:"P3", section:"typed", kind:"situational",
     text:"A teammate on your intramural team has become withdrawn, missed two games, and posted something online that worried other teammates, though it wasn't explicit. Some teammates want to say something; others feel it's private.",
     questions:[ "What would you do, and why?",
       "How would you balance your teammate's privacy against the team's concern for their wellbeing?" ] },
-  { prompt_id:"P4", section:"typed",
+  { prompt_id:"P4", section:"typed", kind:"situational",
     text:"You are volunteering at a clinic. A patient quietly tells you that another volunteer gave them advice about stopping their prescribed medication in favour of a supplement the volunteer sells on the side. The patient asks you not to make a big deal of it.",
     questions:[ "How would you respond to the patient, and why?",
       "What, if anything, would you do about the other volunteer?" ] },
-  { prompt_id:"P5", section:"typed",
+  { prompt_id:"P5", section:"typed", kind:"situational",
     text:"You are on a hiring committee for a student club. One applicant is your roommate, who doesn't know you are on the committee. They are qualified, but so are several other applicants. The committee chair hasn't asked about conflicts of interest.",
     questions:[ "What would you do in this situation, and why?",
       "Describe a time you had to balance a personal relationship against a responsibility to others. What did you learn?" ] },
-  { prompt_id:"P6", section:"typed",
+  { prompt_id:"P6", section:"typed", kind:"situational",
     text:"You are leading a group project worth 40% of the course grade. One member has contributed almost nothing, but privately tells you they have been dealing with a serious family situation and asks you not to tell the others, who want to report the member to the professor.",
     questions:[ "What would you do in this situation, and why?",
       "How would you respond to the group members who want to report your teammate?" ] },
-  { prompt_id:"P7", section:"typed",
+  { prompt_id:"P7", section:"typed", kind:"situational",
     text:"You work at a busy café. A regular customer loudly accuses a new coworker of getting their order wrong on purpose and demands the coworker be fired. You saw the whole exchange: the order slip was ambiguous and the mistake was understandable.",
     questions:[ "How would you handle this situation in the moment?",
       "What would you say to your coworker afterward, and why?" ] }
@@ -296,10 +320,10 @@ let tick = null, mediaStream = null, recorder = null, chunks = [];
 let uploadsInFlight = 0, uploadsFailed = 0;
 
 function show(phase){
-  ["intro","syscheck","scenario","reflect","vcountdown","recording","break","answer","done"]
+  ["intro","syscheck","rolecard","scenario","reflect","vcountdown","recording","break","answer","done"]
     .forEach(p => $("screen-"+p).classList.toggle("active", p === phase));
   $("statusbar").style.display =
-    ["reflect","vcountdown","recording","answer","break"].includes(phase) ? "block" : "none";
+    ["rolecard","scenario","reflect","vcountdown","recording","answer","break"].includes(phase) ? "block" : "none";
   state.phase = phase; saveState();
 }
 function fmt(sec){ const m = Math.floor(sec/60), s = sec%60; return m + ":" + String(s).padStart(2,"0"); }
@@ -411,6 +435,32 @@ function pickMime(){
 function startScenario(){
   clearTick();
   const s = scen();
+  state.qIdx = 0; state.deadline = null;
+  const ux = KIND_UX[s.kind] || KIND_UX.situational;
+  if (s.section === "video" && s.role && ux.roleCard) startRoleCard();
+  else showScenario();
+}
+
+// Role-only screen before situational role-play scenarios, as on the real test.
+function startRoleCard(){
+  clearTick();
+  const s = scen();
+  $("roleKicker").textContent = progressText();
+  $("progressLabel").textContent = progressText();
+  $("roleCardText").textContent = s.role;
+  show("rolecard");
+  let left = ROLE_CARD_SECONDS;
+  $("roleCount").textContent = left;
+  $("timer").textContent = "–"; $("timer").className = "";
+  tick = setInterval(() => {
+    left--; $("roleCount").textContent = left;
+    if (left <= 0) showScenario();
+  }, 1000);
+}
+
+function showScenario(){
+  clearTick();
+  const s = scen();
   $("scenKicker").textContent = progressText();
   $("progressLabel").textContent = progressText();
   $("scenText").textContent = s.text;
@@ -419,12 +469,24 @@ function startScenario(){
   $("scenHint").textContent = s.section === "video"
     ? "Next: optional 30-second reflection, then each question one at a time — 10-second countdown, then 1 minute of recording."
     : "Next: optional 30-second reflection, then 2 questions with a 3:30 timer.";
-  state.qIdx = 0; state.deadline = null;
   show("scenario");
+  let left = SCENARIO_READ_SECONDS;
+  $("scenCount").textContent = "Reflection begins automatically in " + left + "s.";
+  $("timer").textContent = fmt(left); $("timer").className = "";
+  tick = setInterval(() => {
+    left--;
+    $("scenCount").textContent = "Reflection begins automatically in " + left + "s.";
+    $("timer").textContent = fmt(left);
+    if (left <= 0) startReflection();
+  }, 1000);
 }
 
 function startReflection(){
   clearTick();
+  const s = scen();
+  $("reflectRole").style.display = s.role ? "block" : "none";
+  $("reflectRole").textContent = s.role || "";
+  $("reflectScenText").textContent = s.text;
   let left = REFLECTION_SECONDS;
   $("reflectCount").textContent = left;
   $("timer").textContent = "–"; $("timer").className = "";
@@ -637,6 +699,7 @@ async function runSysCheck(){
 $("sysRetryBtn").addEventListener("click", runSysCheck);
 $("sysOkBtn").addEventListener("click", startScenario);
 $("toReflectBtn").addEventListener("click", startReflection);
+$("skipRoleBtn").addEventListener("click", showScenario);
 $("skipReflectBtn").addEventListener("click", afterReflection);
 $("skipBreakBtn").addEventListener("click", () => { clearTick(); startScenario(); });
 $("skipCountdownBtn").addEventListener("click", startRecording);
