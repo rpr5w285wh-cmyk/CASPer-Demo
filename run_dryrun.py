@@ -52,6 +52,13 @@ def preview(prompts_path: str, sample_n: int, seed: int) -> int:
     except (OSError, ValueError, json.JSONDecodeError) as e:
         print(f"[error] Could not load prompts from {prompts_path}: {e}", file=sys.stderr)
         return 2
+    # training_only prompts belong to the private scoring pipeline and must
+    # never appear on a student-facing prompt sheet (absent flag = servable).
+    servable = [p for p in prompts if not p.get("training_only")]
+    if len(servable) < len(prompts):
+        print(f"[note] excluded {len(prompts) - len(servable)} training-only prompt(s) "
+              "from the prompt sheet", file=sys.stderr)
+    prompts = servable
     rng = random.Random(seed)
     n = min(sample_n, len(prompts))
     chosen = rng.sample(prompts, n)

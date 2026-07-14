@@ -3,6 +3,8 @@
     "prompt_id": "V1",
     "section": "video",
     "scenario_type": "role_play_friend",
+    "question_type": "scenario",
+    "training_only": false,
     "role": "You are a close friend.",
     "text": "Your friend calls you, upset. They just found out they were passed over for a promotion they were promised, and the job went to the manager's nephew. They are talking about quitting on the spot tomorrow morning.",
     "questions": [
@@ -14,6 +16,8 @@
     "prompt_id": "V2",
     "section": "video",
     "scenario_type": "role_play_coworker",
+    "question_type": "scenario",
+    "training_only": false,
     "role": "You are a co-worker.",
     "text": "A colleague approaches you at work, visibly stressed. They admit they made an error in a report that has already gone to a client, and they are considering saying nothing and hoping no one notices.",
     "questions": [
@@ -25,6 +29,8 @@
     "prompt_id": "V3",
     "section": "video",
     "scenario_type": "personal",
+    "question_type": "personal",
+    "training_only": false,
     "role": "Answer as yourself.",
     "text": "Think about a time you received criticism that you initially felt was unfair.",
     "questions": [
@@ -36,6 +42,8 @@
     "prompt_id": "V4",
     "section": "video",
     "scenario_type": "role_play_neighbour",
+    "question_type": "scenario",
+    "training_only": false,
     "role": "You are a neighbour.",
     "text": "Your elderly neighbour, who lives alone, tells you their adult son has been taking money from their account 'to manage things', and they seem confused about how much is left. They ask you not to mention it to anyone because they don't want to cause family trouble.",
     "questions": [
@@ -46,6 +54,8 @@
   {
     "prompt_id": "P1",
     "scenario_type": "academic_integrity",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "You are studying with a close friend the night before a major exam. They show you photos of the exam questions, which they say a student from last term sent them. Your friend is on academic probation and will lose their scholarship if they fail.",
     "questions": [
       "What would you do in this situation, and why?",
@@ -56,6 +66,8 @@
   {
     "prompt_id": "P2",
     "scenario_type": "workplace_conflict",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "You work part-time at a pharmacy. You notice a well-liked senior colleague repeatedly leaving early while asking others to punch out their timecard for them. The manager has praised this colleague publicly as a model employee.",
     "questions": [
       "What would you do in this situation, and why?",
@@ -66,6 +78,8 @@
   {
     "prompt_id": "P3",
     "scenario_type": "interpersonal_care",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "A teammate on your intramural team has become withdrawn, missed two games, and posted something online that worried other teammates, though it wasn't explicit. Some teammates want to say something; others feel it's private.",
     "questions": [
       "What would you do, and why?",
@@ -76,6 +90,8 @@
   {
     "prompt_id": "P4",
     "scenario_type": "professional_ethics",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "You are volunteering at a clinic. A patient quietly tells you that another volunteer gave them advice about stopping their prescribed medication in favour of a supplement the volunteer sells on the side. The patient asks you not to make a big deal of it.",
     "questions": [
       "How would you respond to the patient, and why?",
@@ -86,6 +102,8 @@
   {
     "prompt_id": "P5",
     "scenario_type": "fairness_and_disclosure",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "You are on a hiring committee for a student club. One applicant is your roommate, who doesn't know you are on the committee. They are qualified, but so are several other applicants. The committee chair hasn't asked about conflicts of interest.",
     "questions": [
       "What would you do in this situation, and why?",
@@ -97,6 +115,8 @@
     "prompt_id": "P6",
     "section": "typed",
     "scenario_type": "team_fairness",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "You are leading a group project worth 40% of the course grade. One member has contributed almost nothing, but privately tells you they have been dealing with a serious family situation and asks you not to tell the others, who want to report the member to the professor.",
     "questions": [
       "What would you do in this situation, and why?",
@@ -107,6 +127,8 @@
     "prompt_id": "P7",
     "section": "typed",
     "scenario_type": "customer_service",
+    "question_type": "scenario",
+    "training_only": false,
     "text": "You work at a busy café. A regular customer loudly accuses a new coworker of getting their order wrong on purpose and demands the coworker be fired. You saw the whole exchange: the order slip was ambiguous and the mistake was understandable.",
     "questions": [
       "How would you handle this situation in the moment?",
