@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# Local outputs from run_dryrun.py / transcribe.py scoring runs
+results.csv
+results.json
+session_log.txt
