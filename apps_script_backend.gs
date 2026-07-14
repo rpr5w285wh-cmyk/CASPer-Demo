@@ -18,25 +18,27 @@ var SHEET_ID = "PLACEHOLDER_SHEET_ID";   // ← Google Sheet ID from its URL
 var FOLDER_ID = "PLACEHOLDER_FOLDER_ID"; // ← Drive folder ID for video files (video sessions only)
 var SHEET_NAME = "";                     // optional: a specific tab name; "" = first sheet
 var EXPECTED_COLUMNS = ["timestamp", "student_id", "prompt_id", "question_id",
-                        "response_type", "response", "video_link"];
+                        "response_type", "response", "video_link", "mock"];
 
 /** Health check: open the Web App URL in a browser to confirm it's live. */
 function doGet(e) {
   return jsonResponse({
     status: "ok",
     message: "This endpoint is live — POST responses here.",
-    typed_body: '{"student_id":"...","prompt_id":"...","timestamp":"...","answers":[{"question_id":"A","response":"..."}]}',
-    video_body: '{"type":"video","student_id":"...","prompt_id":"...","question_id":"A","timestamp":"...","mime_type":"video/webm","video_base64":"..."}'
+    typed_body: '{"student_id":"...","mock":"1","prompt_id":"...","timestamp":"...","answers":[{"question_id":"A","response":"..."}]}',
+    video_body: '{"type":"video","student_id":"...","mock":"1","prompt_id":"...","question_id":"A","timestamp":"...","mime_type":"video/webm","video_base64":"..."}'
   });
 }
 
 /**
  * Typed submissions: one row per question
- *   [timestamp, student_id, prompt_id, question_id, "typed", response, ""]
+ *   [timestamp, student_id, prompt_id, question_id, "typed", response, "", mock]
  * Video submissions (type:"video", one question per POST): file saved to the
  * Drive folder, then
- *   [timestamp, student_id, prompt_id, question_id, "video", "", file URL]
+ *   [timestamp, student_id, prompt_id, question_id, "video", "", file URL, mock]
  * The blank response column is filled later by the transcription step.
+ * Rows are ONLY ever appended — the same student_id submitting again (a
+ * second mock, or a restart) must never be deduped or blocked here.
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -58,6 +60,9 @@ function doPost(e) {
     var studentId = String(data.student_id || "").trim();
     var promptId  = String(data.prompt_id  || "").trim();
     var timestamp = String(data.timestamp  || "").trim() || new Date().toISOString();
+    // Which sitting this is (?mock= on the student link). Tolerates anything;
+    // blank when the link carried no mock parameter.
+    var mock      = String(data.mock || "").trim();
     if (!studentId || !promptId) {
       return jsonResponse({ status: "error", message: "Missing student_id or prompt_id" });
     }
@@ -73,19 +78,25 @@ function doPost(e) {
         // scenario isn't silently missing from the sheet.
         var noteText = String(data.note || "no recording captured");
         sheet.appendRow([timestamp, studentId, promptId, qid, "video",
-                         "(recording failed: " + noteText + ")", ""]);
+                         "(recording failed: " + noteText + ")", "", mock]);
         return jsonResponse({ status: "ok", message: "Failure row appended",
                               student_id: studentId, prompt_id: promptId, question_id: qid });
       }
       var mime = String(data.mime_type || "video/webm");
       var ext = mime.indexOf("mp4") >= 0 ? "mp4" : "webm";
-      // Filename encodes identity so transcription can run without a join:
-      var fname = studentId + "__" + promptId + "__" + qid + "__" +
-                  timestamp.replace(/[:.]/g, "-") + "." + ext;
+      // Filename encodes identity so transcription can run without a join.
+      // student_id (an email) is sanitized so an odd character can never break
+      // the Drive upload; the mock segment goes AFTER the timestamp because
+      // transcribe.py reads parts[0..3] as id/prompt/question/timestamp.
+      var safeId = studentId.replace(/[^A-Za-z0-9@._-]/g, "_");
+      var safeMock = mock.replace(/[^A-Za-z0-9._-]/g, "_");
+      var fname = safeId + "__" + promptId + "__" + qid + "__" +
+                  timestamp.replace(/[:.]/g, "-") +
+                  (safeMock ? "__mock" + safeMock : "") + "." + ext;
       var bytes = Utilities.base64Decode(data.video_base64);
       var blob = Utilities.newBlob(bytes, mime, fname);
       var file = DriveApp.getFolderById(FOLDER_ID).createFile(blob);
-      sheet.appendRow([timestamp, studentId, promptId, qid, "video", "", file.getUrl()]);
+      sheet.appendRow([timestamp, studentId, promptId, qid, "video", "", file.getUrl(), mock]);
       return jsonResponse({ status: "ok", message: "Video saved: " + fname,
                             student_id: studentId, prompt_id: promptId, question_id: qid });
     }
@@ -101,7 +112,7 @@ function doPost(e) {
       var resp = String(answers[i].response || "").trim();
       // Blank answers are recorded too — an empty cell under time pressure
       // is real data for the dry-run, not an error.
-      sheet.appendRow([timestamp, studentId, promptId, q, "typed", resp, ""]);
+      sheet.appendRow([timestamp, studentId, promptId, q, "typed", resp, "", mock]);
       written++;
     }
     return jsonResponse({ status: "ok", message: written + " row(s) appended",

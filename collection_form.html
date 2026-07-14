@@ -76,11 +76,12 @@
       <li>Recordings upload in the background — a slow connection won't stop the test.</li>
     </ul>
     <p>Total: roughly 45–60 minutes without breaks. Quiet room, computer, working webcam and microphone.</p>
-    <div id="studentIdWrap" style="display:none;">
-      <label for="studentId">Student ID</label>
-      <input type="text" id="studentId" autocomplete="off" placeholder="e.g. S014">
+    <div id="studentIdWrap">
+      <label for="studentId">Email address</label>
+      <input type="text" id="studentId" autocomplete="email" inputmode="email" placeholder="e.g. jane@example.com">
+      <p class="hint">Use the email address you registered with.</p>
     </div>
-    <button id="startBtn">Continue to system check</button>
+    <button id="startBtn" disabled>Continue to system check</button>
     <p class="hint" style="margin-top:14px;">CASPer® is a registered trademark of Altus Assessments Inc. (Acuity Insights) and McMaster University. Prep101 is not affiliated with, endorsed by, or sponsored by Acuity Insights or McMaster University.</p>
   </div></div>
 
@@ -89,6 +90,7 @@
     <div class="kicker">System check</div>
     <h2>Camera and microphone</h2>
     <p>Allow camera and microphone access when your browser asks. You should see yourself below.</p>
+    <p class="hint" id="sysIdentity" style="margin:0 0 8px;"></p>
     <video id="checkPreview" class="preview" autoplay muted playsinline></video>
     <div id="sysMsg" class="msg error"></div>
     <button id="sysOkBtn" disabled>I can see myself — start Section 1</button>
@@ -199,6 +201,12 @@ const DEMO = new URLSearchParams(location.search).get("demo") === "1";
 // REVIEW MODE: ?review=1 keeps real timings but reveals the extra skip buttons
 // (role card, pre-record countdown) that students never see. ?demo=1 implies it.
 const REVIEW = DEMO || new URLSearchParams(location.search).get("review") === "1";
+// Personalized links: ?sid=<email> prefills the email field (still editable,
+// still validated); ?mock=<n> tags every payload with the sitting number —
+// students take more than one mock with the same email, and the backend only
+// ever appends rows, so repeat sittings are always allowed.
+const SID_PREFILL = (new URLSearchParams(location.search).get("sid") || "").trim();
+const MOCK = (new URLSearchParams(location.search).get("mock") || "").trim();
 const ROLE_CARD_SECONDS = DEMO ? 3 : 10;       // role-only screen before situational scenarios
 const SCENARIO_READ_SECONDS = DEMO ? 8 : 30;   // timed scenario reading, auto-advances
 const REFLECTION_SECONDS = DEMO ? 5 : 30;      // optional reflection, every scenario
@@ -366,7 +374,7 @@ async function post(payload){
 
 async function submitTyped(){
   const d = draft();
-  const payload = { type:"typed", student_id:state.student_id, prompt_id:scen().prompt_id,
+  const payload = { type:"typed", student_id:state.student_id, mock:MOCK, prompt_id:scen().prompt_id,
     timestamp:new Date().toISOString(),
     answers:[ {question_id:"A", response:d.A.trim()}, {question_id:"B", response:d.B.trim()} ] };
   if (!BACKEND_CONFIGURED){
@@ -391,7 +399,7 @@ function uploadRecording(promptId, questionId, blob, mime){
   const reader = new FileReader();
   reader.onload = async () => {
     const b64 = String(reader.result).split(",")[1] || "";
-    const payload = { type:"video", student_id:state.student_id, prompt_id:promptId,
+    const payload = { type:"video", student_id:state.student_id, mock:MOCK, prompt_id:promptId,
       question_id:questionId, timestamp:new Date().toISOString(),
       mime_type:(mime || "video/webm"), video_base64:b64 };
     idbPut({ id, payload });               // survives refresh until confirmed sent
@@ -571,7 +579,7 @@ function uploadRecordingFailure(promptId, questionId, note){
       detail:"recording failed: " + note });
     saveState(); return;
   }
-  const payload = { type:"video", student_id:state.student_id, prompt_id:promptId,
+  const payload = { type:"video", student_id:state.student_id, mock:MOCK, prompt_id:promptId,
     question_id:questionId, timestamp:new Date().toISOString(),
     mime_type:"", video_base64:"", note:note };
   state.textQueue.push(payload); saveState();   // tiny payload; text queue is fine
@@ -683,11 +691,24 @@ async function renderDone(){
 // ============================================================
 // Wiring
 // ============================================================
-$("studentId").addEventListener("input", () => { $("startBtn").disabled = $("studentId").value.trim() === ""; });
+// Email gate: basic shape check only (trimmed, "@" with a "." after it).
+// DEMO/REVIEW links are exempt — an empty field falls back to a random ID.
+function emailValid(v){
+  v = v.trim();
+  const at = v.indexOf("@");
+  return at > 0 && v.indexOf(".", at + 1) > at + 1;
+}
+function updateStartGate(){
+  $("startBtn").disabled = !(REVIEW || emailValid($("studentId").value));
+}
+$("studentId").addEventListener("input", updateStartGate);
+$("studentId").value = SID_PREFILL;
+updateStartGate();
 $("startBtn").addEventListener("click", async () => {
-  const entered = $("studentId").value.trim();
+  const email = $("studentId").value.trim().toLowerCase();
   state.student_id = (DEMO ? "DEMO-" : "") +
-    (entered || "R-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+    (email || "R-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  $("sysIdentity").textContent = "Submitting as " + state.student_id + (MOCK ? " — Mock " + MOCK : "");
   state.idx = 0; state.qIdx = 0; state.drafts = {}; state.textQueue = [];
   state.sentText = 0; state.sentVideo = 0;
   state.breaksTaken = { afterVideo:false, midTyped:false };
