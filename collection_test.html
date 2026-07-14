@@ -71,8 +71,10 @@
 
   <div class="card">
     <h2>2 · Manual check — pre-filled single submission</h2>
-    <label for="studentId">Student ID</label>
+    <label for="studentId">Student ID (email on real links)</label>
     <input type="text" id="studentId" value="TEST-MANUAL">
+    <label for="mockNum">Mock number (optional)</label>
+    <input type="text" id="mockNum" value="1">
     <label for="promptId">Prompt</label>
     <select id="promptId">
       <option value="P1" selected>P1 — Exam photos</option>
@@ -124,15 +126,17 @@ async function post(payload) {
 // Tiny fake "recording" (a few bytes) — verifies the Drive-save path without a real webcam.
 const FAKE_VIDEO_B64 = btoa("not a real video, just bytes for the smoke test");
 const TEST_ROWS = [
-  { type: "video", student_id: "TEST-V", prompt_id: "V1", question_id: "A",
+  // student_id doubles as the sid; mock exercises the new sheet column
+  // (values 1, 1, 2, and absent — the blank-column case).
+  { type: "video", student_id: "TEST-V", mock: "1", prompt_id: "V1", question_id: "A",
     mime_type: "video/webm", video_base64: FAKE_VIDEO_B64 },
-  { student_id: "TEST-A", prompt_id: "P1", answers: [
+  { student_id: "TEST-A", mock: "1", prompt_id: "P1", answers: [
       { question_id: "A", response: "Automated test one, answer A. Verifies a scenario POST writes one row per question. Safe to delete." },
       { question_id: "B", response: "Automated test one, answer B. Should land as a second row for the same scenario. Safe to delete." } ] },
-  { student_id: "TEST-B", prompt_id: "P2", answers: [
+  { student_id: "TEST-B", mock: "2", prompt_id: "P2", answers: [
       { question_id: "A", response: "Automated test two, answer A. Verifies sequential submissions keep correct student and prompt IDs. Safe to delete." },
       { question_id: "B", response: "" } ] },  // deliberately blank: timed-out answers must still record
-  { student_id: "TEST-C", prompt_id: "P3", answers: [
+  { student_id: "TEST-C", prompt_id: "P3", answers: [      // no mock: column must land blank
       { question_id: "A", response: "Automated test three, answer A. Verifies the lock service handles back-to-back writes. Safe to delete." },
       { question_id: "B", response: "Automated test three, answer B. Safe to delete." } ] }
 ];
@@ -160,7 +164,7 @@ document.getElementById("autoBtn").addEventListener("click", async () => {
   }
   log("");
   if (passed === TEST_ROWS.length) {
-    log("All " + passed + "/4 passed. Check the Sheet for 7 new TEST- rows (1 video + 6 typed) and the Drive folder for one tiny TEST-V__V1__A file.", "ok");
+    log("All " + passed + "/4 passed. Check the Sheet for 7 new TEST- rows (1 video + 6 typed) with mock column 1, 1, 1, 2, 2, blank, blank, and the Drive folder for one tiny TEST-V__V1__A__…__mock1 file.", "ok");
   } else {
     log(passed + "/3 passed. Check: URL correct? Deployed as 'Anyone'? New version deployed after edits? " +
         "If stuck, contact " + CONTACT_EMAIL + ".", "bad");
@@ -174,6 +178,7 @@ document.getElementById("manualBtn").addEventListener("click", async () => {
   btn.textContent = "Submitting…";
   const payload = {
     student_id: document.getElementById("studentId").value.trim(),
+    mock:       document.getElementById("mockNum").value.trim(),
     prompt_id:  document.getElementById("promptId").value,
     timestamp:  new Date().toISOString(),
     answers: [

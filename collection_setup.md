@@ -6,10 +6,16 @@ Replaces JotForm entirely. Total setup time: ~15 minutes. Do this by
 ## 1. Create the Sheet
 
 1. Create a fresh Google Sheet named e.g. `CASPer Dry-Run Responses`.
-2. (Optional) Type the header row in A1:E1: `timestamp`, `student_id`,
-   `prompt_id`, `question_id`, `response` — the backend also writes it
-   automatically on the first submission if the sheet is empty. Each
-   scenario submission produces TWO rows (question A and question B).
+2. Leave it empty — the backend writes the header row automatically on the
+   first submission: `timestamp`, `student_id`, `prompt_id`, `question_id`,
+   `response_type`, `response`, `video_link`, `mock`. Each scenario
+   submission produces TWO rows (question A and question B).
+
+   > ⚠️ **Create the Sheet fresh AFTER deploying this backend version.**
+   > This version added the `mock` column. If a Sheet already exists with
+   > the old 7-column header, recreate it (or archive the tab and start a
+   > new one) — appending 8-column rows under a 7-column header silently
+   > misaligns the data.
 3. Copy the Sheet ID from the URL — the long string between `/d/` and `/edit`:
    `https://docs.google.com/spreadsheets/d/`**`THIS_PART`**`/edit`
 
@@ -62,6 +68,23 @@ Any static option works — the POST is cross-origin-friendly as deployed:
 - **GitHub Pages:** commit it to a repo with Pages enabled.
 - **Email attachment:** students save the file and open it locally
   (double-click). The POST works from a `file://` page too.
+
+## 5b. Link formats (for whoever sends the links)
+
+Students are identified by the email they enter on the intro screen
+(`student_id` = trimmed, lowercased email). The URL can prefill it so a
+typo can't break the linkage:
+
+| Link | Behaviour |
+|---|---|
+| `…/collection_form.html` | Plain student link. Email required before the test can start. |
+| `…/collection_form.html?sid=jane%40example.com&mock=1` | **Preferred per-student link.** Prefills the email (still editable) and tags every row and recording with `mock=1`. Send `mock=2` links for the second sitting — same email, repeat submissions are always appended, never blocked. |
+| `…/collection_form.html?review=1` | Reviewer link: real timings, extra skip buttons, email optional. |
+| `…/collection_form.html?demo=1` | 2-minute walkthrough: short timers, 1 video + 1 typed scenario, email optional, rows prefixed `DEMO-`. |
+
+URL-encode the email in `sid` (`@` → `%40`). The student sees
+"Submitting as jane@example.com — Mock 2" on the system-check screen —
+tell them to flag it if that's not them.
 
 ## 6. Smoke-test the backend
 
