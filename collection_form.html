@@ -398,7 +398,18 @@ function uploadRecording(promptId, questionId, blob, mime){
   const id = state.student_id + "_" + promptId + "_" + questionId + "_" + Date.now();
   const reader = new FileReader();
   reader.onload = async () => {
-    const b64 = String(reader.result).split(",")[1] || "";
+    // Comma-safe base64 extraction. pickMime() can return
+    // "video/webm;codecs=vp8,opus" — that comma made split(",")[1] return the
+    // literal "opus;base64" and silently discard every Chrome recording.
+    // Base64 never contains commas, so the data starts after the LAST comma.
+    const s = String(reader.result);
+    const b64 = s.slice(s.lastIndexOf(",") + 1) || "";
+    if (b64.length < 100){
+      // Empty/corrupt capture: record the gap honestly in the Sheet instead
+      // of queueing an unsendable payload that would retry forever.
+      uploadRecordingFailure(promptId, questionId, "recording produced no data");
+      return;
+    }
     const payload = { type:"video", student_id:state.student_id, mock:MOCK, prompt_id:promptId,
       question_id:questionId, timestamp:new Date().toISOString(),
       mime_type:(mime || "video/webm"), video_base64:b64 };
@@ -425,6 +436,40 @@ async function flushQueues(){
     catch(_){ uploadsFailed++; }
   }
   updateUploadBadge(); saveState();
+}
+
+// Run-day resilience: recordings queued in IndexedDB survive a reload, but a
+// fresh page starts at the intro with no retry surface. If pending uploads
+// exist on load, surface them on the intro screen and try to send them, so a
+// student who panics and hits F5 can still get their recordings out.
+async function recoverPendingUploads(){
+  if (!BACKEND_CONFIGURED) return;
+  const pend = await idbAll();
+  if (!pend.length) return;
+  const box = document.createElement("div");
+  box.className = "warnbox"; box.style.display = "block"; box.id = "recoverBox";
+  const msg = document.createElement("div"); msg.id = "recoverMsg";
+  const btn = document.createElement("button");
+  btn.className = "ghost"; btn.id = "recoverRetryBtn"; btn.style.marginTop = "10px";
+  btn.textContent = "Retry sending now";
+  box.appendChild(msg); box.appendChild(btn);
+  document.querySelector("#screen-intro .card").prepend(box);
+  const attempt = async () => {
+    btn.disabled = true;
+    msg.textContent = pend.length + " unsent recording(s) from an earlier session are saved in this browser — sending now…";
+    await flushQueues();
+    const left = (await idbAll()).length;
+    if (left === 0){
+      msg.textContent = "Recovered: all unsent recordings from your earlier session have been sent. You can start normally.";
+      btn.style.display = "none";
+    } else {
+      msg.textContent = left + " recording(s) from an earlier session still could not be sent. " +
+        "Check your connection and retry — they stay saved in this browser. If it keeps failing, contact " + CONTACT_EMAIL + ".";
+      btn.disabled = false;
+    }
+  };
+  btn.addEventListener("click", attempt);
+  attempt();
 }
 
 // ============================================================
@@ -783,6 +828,7 @@ window.addEventListener("beforeunload", (e) => {
 (async function init(){
   db = await openDB();
   show("intro");
+  recoverPendingUploads();
 })();
 </script>
 </body>
